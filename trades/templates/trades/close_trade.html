@@ -1,0 +1,6 @@
+<h2>Close Trade</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}  <!-- Render the form fields -->
+    <button type="submit">Close Trade</button>
+</form>

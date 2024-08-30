@@ -1,0 +1,10 @@
+{% extends 'trades/base.html' %}
+
+{% block content %}
+<h2>Set Your Starting Balance</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save Balance</button>
+</form>
+{% endblock %}

@@ -1,0 +1,6 @@
+<h2>Edit Trade</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}  <!-- Render the form fields with the existing data -->
+    <button type="submit">Save Changes</button>
+</form>

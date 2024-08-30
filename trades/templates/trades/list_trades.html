@@ -1,0 +1,49 @@
+{% extends 'trades/base.html' %}
+
+{% block content %}
+<h2>Trade List</h2>
+
+{% if trades %}
+    <table style="width:100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>Date/Time</th>
+                <th>Token Pairing</th>
+                <th>Position Type</th>
+                <th>Leverage</th>
+                <th>Position Size</th>
+                <th>PnL</th>
+                <th>Result</th>
+                <th>% Change</th>
+                <th>Notes</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trade in trades %}
+            <tr>
+                <td>{{ trade.date }} {{ trade.time }}</td>
+                <td>{{ trade.token_pairing }}</td>
+                <td>{{ trade.position_type }}</td>
+                <td>{{ trade.leverage_used }}</td>
+                <td>{{ trade.position_size }}</td>
+                <td>{{ trade.pnl }}</td>
+                <td>{{ trade.result }}</td>
+                <td>{{ trade.percentage_change }}</td>
+                <td>{{ trade.closing_notes }}</td>
+                <td>
+                    {% if trade.result %}
+                        <a href="{% url 'edit_trade' trade.id %}">Edit</a> |
+                        <a href="{% url 'delete_trade' trade.id %}">Delete</a>
+                    {% else %}
+                        <a href="{% url 'close_trade' trade.id %}">Close Trade</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No logs yet! <a href="{% url 'add_trade' %}">Create your first log here!</a></p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends 'trades/base.html' %}
+
+{% block content %}
+<h2>Add Trade</h2>
+<form method="post">
+    {% csrf_token %}
+    
+    <div style="margin-bottom: 10px;">
+        {{ form.date.label_tag }}<br>
+        {{ form.date }}
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        {{ form.time.label_tag }}<br>
+        {{ form.time }}
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        {{ form.token_pairing.label_tag }}<br>
+        {{ form.token_pairing }}
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        <label for="leverage_slider">Leverage used:</label><br>
+        <input type="range" id="leverage_slider" name="leverage_used" min="1" max="100" value="{{ form.leverage_used.value|default:50 }}">
+        <span id="leverage_value">50</span>x
+    </div>
+    
+    <div style="margin-bottom: 10px;">
+        {{ form.position_size.label_tag }}<br>
+        {{ form.position_size }}
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        {{ form.position_type.label_tag }}<br>
+        {{ form.position_type }}
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        {{ form.strategy_type.label_tag }}<br>
+        {{ form.strategy_type }}
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        {{ form.timeframe.label_tag }}<br>
+        {{ form.timeframe }}
+    </div>
+
+    <div style="margin-bottom: 10px;">
+        {{ form.opening_notes.label_tag }}<br>
+        {{ form.opening_notes }}
+    </div>
+
+    <div style="margin-top: 20px;">
+        <p><strong>Total Amount Required:</strong> <span id="total_amount">0</span> USDT</p>
+        <p><strong>Percentage of Starting Balance:</strong> <span id="percentage_balance">0</span>%</p>
+    </div>
+
+    <button type="submit" style="margin-top: 20px;">Add Trade</button>
+</form>
+
+<script>
+    // JavaScript to dynamically update the leverage value display and perform calculations
+    var slider = document.getElementById("leverage_slider");
+    var output = document.getElementById("leverage_value");
+    var positionSizeInput = document.getElementById("id_position_size");
+    var tokenPairingInput = document.getElementById("id_token_pairing");
+    var totalAmountElement = document.getElementById("total_amount");
+    var percentageBalanceElement = document.getElementById("percentage_balance");
+
+    // Store starting balance in a JavaScript variable
+    var startingBalance = parseFloat("{{ profile.starting_balance|default_if_none:0 }}");
+
+    // Initialize the slider display value
+    output.innerHTML = slider.value;
+
+    // Function to fetch real-time price from the API with retry mechanism
+    function fetchPrice(tokenPair, callback) {
+        fetch(`https://api.bybit.com/v2/public/tickers?symbol=${tokenPair}`)
+            .then(response => {
+                if (response.status === 429) {
+                    // Delay retry after hitting rate limit
+                    setTimeout(() => fetchPrice(tokenPair, callback), 1000);  // Retry after 1 second
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.result && data.result.length > 0) {
+                    callback(parseFloat(data.result[0].last_price));
+                } else {
+                    callback(null);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching price:', error);
+                callback(null);
+            });
+    }
+
+    // Function to update calculations based on form inputs
+    function updateCalculations() {
+        var leverage = parseFloat(slider.value);
+        var positionSize = parseFloat(positionSizeInput.value);
+        var tokenPair = tokenPairingInput.value;
+
+        fetchPrice(tokenPair, function(price) {
+            if (leverage && positionSize && price) {
+                var totalAmountRequired = (positionSize * price) / leverage;
+                totalAmountElement.innerText = totalAmountRequired.toFixed(2);
+
+                var percentageOfBalance = (totalAmountRequired / startingBalance) * 100;
+                percentageBalanceElement.innerText = percentageOfBalance.toFixed(2);
+            } else {
+                totalAmountElement.innerText = '0';
+                percentageBalanceElement.innerText = '0';
+            }
+        });
+    }
+
+    // Event listeners to update the display and calculations when inputs change
+    slider.oninput = function() {
+        output.innerHTML = this.value;  // Update the leverage value display
+        updateCalculations();           // Recalculate the total amount and percentage
+    }
+
+    positionSizeInput.oninput = function() {
+        updateCalculations();           // Recalculate when position size changes
+    }
+
+    tokenPairingInput.onchange = function() {
+        updateCalculations();           // Recalculate when token pairing changes
+    }
+
+    // Run calculations on page load to initialize values
+    updateCalculations();
+</script>
+
+
+
+
+
+
+
+{% endblock %}

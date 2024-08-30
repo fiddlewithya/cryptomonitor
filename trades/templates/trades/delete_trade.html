@@ -1,0 +1,8 @@
+<h2>Delete Trade</h2>
+<p>Are you sure you want to delete this trade?</p>
+<p><strong>{{ trade.token_pairing }}</strong> on {{ trade.date }} {{ trade.time }}</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, delete</button>
+    <a href="{% url 'list_trades' %}">Cancel</a>
+</form>
