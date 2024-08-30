@@ -8,6 +8,10 @@
    - **Issue:** The total amount required and percentage of the starting balance used are not updating correctly.
    - **Solution:** Ensure that the API call to BYBIT is correctly fetching the token price at the specified date and time. Debug the code to verify that the position size and leverage are properly used in the calculation.
 
+3. **Calibri Font Issue**
+   - **Issue:** The Calibri font specified in CSS is not being applied to all pages.
+   - **Solution:** Check the CSS file to ensure that the Calibri font is correctly defined. Verify that the CSS file is properly linked to all pages and that no other styles are overriding the font settings.
+
 ## Adding Planned Features
 
 1. **Chart for Total Trade Value**
