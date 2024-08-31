@@ -9,4 +9,6 @@ urlpatterns = [
     path('edit/<int:trade_id>/', views.edit_trade, name='edit_trade'),
     path('delete/<int:trade_id>/', views.delete_trade, name='delete_trade'),
     path('api/get-price/<str:token_pair>/', views.get_price, name='get_price'),
+    path('fetch_historical_price/<str:symbol>/<str:date>/<str:time>/', views.fetch_historical_price_view, name='fetch_historical_price'),
+    
 ]

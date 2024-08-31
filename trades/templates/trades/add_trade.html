@@ -1,148 +1,132 @@
-{% extends 'trades/base.html' %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Trade</title>
+</head>
+<body>
+    <h1>Add Trade</h1>
+    <form method="post">
+        {% csrf_token %}
+        <!-- Token Pairing Dropdown -->
+        <label for="token_pairing">Token pairing:</label>
+        <select id="id_token_pairing" name="token_pairing">
+            {% for value, display in form.token_pairing.field.choices %}
+                <option value="{{ value }}">{{ display }}</option>
+            {% endfor %}
+        </select>
+        <br>
 
-{% block content %}
-<h2>Add Trade</h2>
-<form method="post">
-    {% csrf_token %}
+        <!-- Date and Time Inputs -->
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required><br>
+
+        <label for="time">Time:</label>
+        <input type="time" id="time" name="time" required><br>
+
+        <!-- Display Historical Price -->
+        <p id="historical_price">Historical Price: </p>
+
+        <!-- Leverage Slider -->
+        <label for="leverage">Leverage used:</label>
+        <input type="range" id="leverage_slider" name="leverage_used" min="1" max="100">
+        <span id="leverage_value">50x</span>
+        <br>
+
+        <!-- Position Size -->
+        <label for="position_size">Position size:</label>
+        <input type="text" id="id_position_size" name="position_size" required><br>
+
+        <!-- Position Type Dropdown -->
+        <label for="position_type">Position type:</label>
+        <select id="position_type" name="position_type">
+            {% for value, display in form.position_type.field.choices %}
+                <option value="{{ value }}">{{ display }}</option>
+            {% endfor %}
+        </select>
+        <br>
+
+        <!-- Strategy Type -->
+        <label for="strategy_type">Strategy type:</label>
+        <input type="text" id="strategy_type" name="strategy_type" required><br>
+
+        <!-- Timeframe Dropdown -->
+        <label for="timeframe">Timeframe:</label>
+        <select id="timeframe" name="timeframe">
+            {% for value, display in form.timeframe.field.choices %}
+                <option value="{{ value }}">{{ display }}</option>
+            {% endfor %}
+        </select>
+        <br>
+
+        <!-- Opening Notes -->
+        <label for="opening_notes">Opening Notes:</label>
+        <textarea id="opening_notes" name="opening_notes"></textarea><br>
+
+        <!-- Total Amount Required -->
+        <p id="total_amount">Total Amount Required: 0 USDT</p>
+
+        <!-- Percentage of Starting Balance -->
+        <p id="percentage_balance">Percentage of Starting Balance: 0%</p>
+
+        <button type="submit">Add Trade</button>
+    </form>
+
+    <script>
+        // Fetch DOM elements
+        const tokenPairingInput = document.getElementById('id_token_pairing');
+        const dateInput = document.getElementById('date');
+        const timeInput = document.getElementById('time');
+        const historicalPriceElement = document.getElementById('historical_price');
+        const leverageSlider = document.getElementById('leverage_slider');
+        const leverageValue = document.getElementById('leverage_value');
+        const totalAmountElement = document.getElementById('total_amount');
+        const percentageBalanceElement = document.getElementById('percentage_balance');
+        const positionSizeInput = document.getElementById('id_position_size');
     
-    <div style="margin-bottom: 10px;">
-        {{ form.date.label_tag }}<br>
-        {{ form.date }}
-    </div>
-
-    <div style="margin-bottom: 10px;">
-        {{ form.time.label_tag }}<br>
-        {{ form.time }}
-    </div>
-
-    <div style="margin-bottom: 10px;">
-        {{ form.token_pairing.label_tag }}<br>
-        {{ form.token_pairing }}
-    </div>
-
-    <div style="margin-bottom: 10px;">
-        <label for="leverage_slider">Leverage used:</label><br>
-        <input type="range" id="leverage_slider" name="leverage_used" min="1" max="100" value="{{ form.leverage_used.value|default:50 }}">
-        <span id="leverage_value">50</span>x
-    </div>
+        // Pass the starting balance directly from Django to JS
+        const startingBalance = parseFloat('{{ profile.starting_balance|floatformat:2|safe }}');
     
-    <div style="margin-bottom: 10px;">
-        {{ form.position_size.label_tag }}<br>
-        {{ form.position_size }}
-    </div>
-
-    <div style="margin-bottom: 10px;">
-        {{ form.position_type.label_tag }}<br>
-        {{ form.position_type }}
-    </div>
-
-    <div style="margin-bottom: 10px;">
-        {{ form.strategy_type.label_tag }}<br>
-        {{ form.strategy_type }}
-    </div>
-
-    <div style="margin-bottom: 10px;">
-        {{ form.timeframe.label_tag }}<br>
-        {{ form.timeframe }}
-    </div>
-
-    <div style="margin-bottom: 10px;">
-        {{ form.opening_notes.label_tag }}<br>
-        {{ form.opening_notes }}
-    </div>
-
-    <div style="margin-top: 20px;">
-        <p><strong>Total Amount Required:</strong> <span id="total_amount">0</span> USDT</p>
-        <p><strong>Percentage of Starting Balance:</strong> <span id="percentage_balance">0</span>%</p>
-    </div>
-
-    <button type="submit" style="margin-top: 20px;">Add Trade</button>
-</form>
-
-<script>
-    // JavaScript to dynamically update the leverage value display and perform calculations
-    var slider = document.getElementById("leverage_slider");
-    var output = document.getElementById("leverage_value");
-    var positionSizeInput = document.getElementById("id_position_size");
-    var tokenPairingInput = document.getElementById("id_token_pairing");
-    var totalAmountElement = document.getElementById("total_amount");
-    var percentageBalanceElement = document.getElementById("percentage_balance");
-
-    // Store starting balance in a JavaScript variable
-    var startingBalance = parseFloat("{{ profile.starting_balance|default_if_none:0 }}");
-
-    // Initialize the slider display value
-    output.innerHTML = slider.value;
-
-    // Function to fetch real-time price from the API with retry mechanism
-    function fetchPrice(tokenPair, callback) {
-        fetch(`https://api.bybit.com/v2/public/tickers?symbol=${tokenPair}`)
-            .then(response => {
-                if (response.status === 429) {
-                    // Delay retry after hitting rate limit
-                    setTimeout(() => fetchPrice(tokenPair, callback), 1000);  // Retry after 1 second
-                    return;
-                }
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data && data.result && data.result.length > 0) {
-                    callback(parseFloat(data.result[0].last_price));
-                } else {
-                    callback(null);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching price:', error);
-                callback(null);
-            });
-    }
-
-    // Function to update calculations based on form inputs
-    function updateCalculations() {
-        var leverage = parseFloat(slider.value);
-        var positionSize = parseFloat(positionSizeInput.value);
-        var tokenPair = tokenPairingInput.value;
-
-        fetchPrice(tokenPair, function(price) {
-            if (leverage && positionSize && price) {
-                var totalAmountRequired = (positionSize * price) / leverage;
-                totalAmountElement.innerText = totalAmountRequired.toFixed(2);
-
-                var percentageOfBalance = (totalAmountRequired / startingBalance) * 100;
-                percentageBalanceElement.innerText = percentageOfBalance.toFixed(2);
-            } else {
-                totalAmountElement.innerText = '0';
-                percentageBalanceElement.innerText = '0';
-            }
-        });
-    }
-
-    // Event listeners to update the display and calculations when inputs change
-    slider.oninput = function() {
-        output.innerHTML = this.value;  // Update the leverage value display
-        updateCalculations();           // Recalculate the total amount and percentage
-    }
-
-    positionSizeInput.oninput = function() {
-        updateCalculations();           // Recalculate when position size changes
-    }
-
-    tokenPairingInput.onchange = function() {
-        updateCalculations();           // Recalculate when token pairing changes
-    }
-
-    // Run calculations on page load to initialize values
-    updateCalculations();
-</script>
-
-
-
-
-
-
-
-{% endblock %}
+        // Update leverage value display
+        leverageSlider.oninput = function() {
+            leverageValue.textContent = this.value + "x";
+        };
+    
+        // Function to fetch and display historical price
+        function fetchAndDisplayHistoricalPrice() {
+            const symbol = tokenPairingInput.value;
+            const date = dateInput.value;
+            const time = timeInput.value + ":00"; // Add seconds to match the format
+    
+            fetch(`/fetch_historical_price/${symbol}/${date}/${time}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.price) {
+                        historicalPriceElement.textContent = `Historical Price: ${data.price} USDT`;
+    
+                        // Calculate Total Amount Required
+                        const leverage = leverageSlider.value;
+                        const positionSize = parseFloat(positionSizeInput.value);
+    
+                        if (leverage && positionSize && data.price) {
+                            const totalAmountRequired = (positionSize * data.price) / leverage;
+                            totalAmountElement.textContent = `Total Amount Required: ${totalAmountRequired.toFixed(2)} USDT`;
+    
+                            // Calculate Percentage of Starting Balance
+                            const percentageOfBalance = (totalAmountRequired / startingBalance) * 100;
+                            percentageBalanceElement.textContent = `Percentage of Starting Balance: ${percentageOfBalance.toFixed(2)}%`;
+                        }
+                    } else {
+                        historicalPriceElement.textContent = "Historical Price: Not available";
+                    }
+                });
+        }
+    
+        // Event listeners to trigger fetching historical price
+        tokenPairingInput.addEventListener('change', fetchAndDisplayHistoricalPrice);
+        dateInput.addEventListener('change', fetchAndDisplayHistoricalPrice);
+        timeInput.addEventListener('change', fetchAndDisplayHistoricalPrice);
+    </script>
+    
+    
+</body>
+</html>

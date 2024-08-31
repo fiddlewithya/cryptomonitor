@@ -3,5 +3,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('trades/', include('trades.urls')),  # Including URLs from the trades app
+    path('trades/', include('trades.urls')),
 ]
